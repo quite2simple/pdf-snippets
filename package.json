@@ -1,0 +1,18 @@
+{
+  "name": "pdf-snippets",
+  "version": "0.0.1",
+  "description": "A simple Express API that receives a PDF file and an array of pages that are returned as images",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "quite2simple",
+  "license": "ISC",
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "pdf-lib": "^1.17.1",
+    "pdf2pic": "^3.1.1"
+  }
+}
