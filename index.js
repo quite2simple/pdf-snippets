@@ -1,9 +1,8 @@
 const express = require('express');
 const multer = require('multer');
-const { PDFDocument } = require('pdf-lib');
-const { fromPath } = require('pdf2pic');
 const fs = require('fs');
 const path = require('path');
+const { pdfToPng } = require('pdf-to-png-converter');
 
 const app = express();
 const port = 3000;
@@ -14,7 +13,7 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/');
     },
     filename: function(req, file, cb) {
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+        cb(null, file.fieldname + path.extname(file.originalname));
     }
 });
 
@@ -34,42 +33,28 @@ app.post('/api/convert', upload.single('pdf'), async (req, res) => {
 
     const pageNumbers = req.body.pages ? JSON.parse(req.body.pages).pages : [];
 
-    console.log(pageNumbers);
+    const pngPages = await pdfToPng(path.join(__dirname, 'uploads', "pdf.pdf"),
+    {
+        disableFontFace: true, // When `false`, fonts will be rendered using a built-in font renderer that constructs the glyphs with primitive path commands. Default value is true.
+        useSystemFonts: false, // When `true`, fonts that aren't embedded in the PDF document will fallback to a system font. Default value is false.
+        enableXfa: false, // Render Xfa forms if any. Default value is false.
+        viewportScale: 2.0, // The desired scale of PNG viewport. Default value is 1.0.
+        outputFolder: 'images', // Folder to write output PNG files. If not specified, PNG output will be available only as a Buffer content, without saving to a file.
+        outputFileMask: 'buffer', // Output filename mask. Default value is 'buffer'.
+        pdfFilePassword: 'pa$$word', // Password for encrypted PDF.
+        pagesToProcess: pageNumbers,   // Subset of pages to convert (first page = 1), other pages will be skipped if specified.
+        strictPagesToProcess: false, // When `true`, will throw an error if specified page number in pagesToProcess is invalid, otherwise will skip invalid page. Default value is false.
+        verbosityLevel: 0 // Verbosity level. ERRORS: 0, WARNINGS: 1, INFOS: 5. Default value is 0.
+    });
 
-    const options = {
-        density: 100,
-        saveFilename: 'converted',
-        savePath: './images',
-        format: 'png',
-        width: 600,
-        height: 800
-    };
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="res.zip"');
 
-    const converter = fromPath(req.file.path, options);
+    // console.log(pngPages);
 
-    // Ensure the images directory exists
-    const imagesDir = path.join(__dirname, 'images');
-    if (!fs.existsSync(imagesDir)) {
-        fs.mkdirSync(imagesDir);
-    }
+    pngPages.forEach(f => res.write(f.content));
 
-    try {
-        // Extract and convert specified pages to images
-        const pagesToConvert = pageNumbers.map(pageNumber => converter(pageNumber));
-
-        console.log(pagesToConvert);
-        const images = await Promise.all(pagesToConvert);
-
-
-
-        // Clean up uploaded PDF file
-        fs.unlinkSync(req.file.path);
-
-        res.json({ message: 'Conversion successful', images: images.map(image => image.name) });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('An error occurred during the conversion process.');
-    }
+    res.end();
 });
 
 app.listen(port, () => {
