@@ -3,6 +3,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { pdfToPng } = require('pdf-to-png-converter');
+var zip = require('express-zip');
 
 const app = express();
 const port = 3000;
@@ -40,21 +41,21 @@ app.post('/api/convert', upload.single('pdf'), async (req, res) => {
         enableXfa: false, // Render Xfa forms if any. Default value is false.
         viewportScale: 2.0, // The desired scale of PNG viewport. Default value is 1.0.
         outputFolder: 'images', // Folder to write output PNG files. If not specified, PNG output will be available only as a Buffer content, without saving to a file.
-        outputFileMask: 'buffer', // Output filename mask. Default value is 'buffer'.
+        outputFileMask: 'res', // Output filename mask. Default value is 'buffer'.
         pdfFilePassword: 'pa$$word', // Password for encrypted PDF.
         pagesToProcess: pageNumbers,   // Subset of pages to convert (first page = 1), other pages will be skipped if specified.
         strictPagesToProcess: false, // When `true`, will throw an error if specified page number in pagesToProcess is invalid, otherwise will skip invalid page. Default value is false.
         verbosityLevel: 0 // Verbosity level. ERRORS: 0, WARNINGS: 1, INFOS: 5. Default value is 0.
     });
-
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', 'attachment; filename="res.zip"');
-
-    // console.log(pngPages);
-
-    pngPages.forEach(f => res.write(f.content));
-
-    res.end();
+    const outputFiles = []
+    for (let i = 0; i < pageNumbers.length; i++) {
+        const p = {
+            path: `./images/res_page_${pageNumbers[i]}.png`,
+            name: `pic${pageNumbers[i]}.png`
+        }
+        outputFiles.push(p);
+    }
+    res.zip(outputFiles);
 });
 
 app.listen(port, () => {
