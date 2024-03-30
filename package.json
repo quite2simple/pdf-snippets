@@ -1,6 +1,6 @@
 {
   "name": "pdf-snippets",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A simple Express API that receives a PDF file and an array of pages that are returned as images",
   "main": "index.js",
   "scripts": {
